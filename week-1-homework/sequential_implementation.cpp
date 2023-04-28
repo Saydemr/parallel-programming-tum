@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "vv-aes.h"
+#include <chrono>
 
 /**
  * This function takes the characters stored in the 7x7 message array and substitutes each character for the
@@ -111,6 +112,9 @@ void add_key() {
  * Your main encryption routine.
  */
 int main() {
+
+    std::chrono::high_resolution_clock::time_point start, stop;
+    start = std::chrono::high_resolution_clock::now();
     // Receive the problem from the system.
     readInput();
 
@@ -143,5 +147,8 @@ int main() {
 
     // Submit our solution back to the system.
     writeOutput();
+    stop = std::chrono::high_resolution_clock::now();
+    int time_in_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
+    std::cout << std::dec << "Operations executed in " << time_in_microseconds << " microseconds" << std::endl;
     return 0;
 }

@@ -10,18 +10,17 @@
 void decrypt_message(uint8_t *decryptedMessage, uint8_t *keys, uint8_t *values)
 {
     // TODO: modify the following code to improve the efficiency
-    int index = -1;
+    int dict[UNIQUE_CHARACTERS];
+
+    for (int i = 0; i < UNIQUE_CHARACTERS; ++i)
+    {
+        auto key = keys[i];
+        dict[key] = values[i];
+    }
+
     for (unsigned int i = 0; i < STRING_LEN; ++i)
     {
-        for (int k = 0; k < UNIQUE_CHARACTERS; ++k)
-        {
-            if (decryptedMessage[i] == keys[k])
-            {
-                index = k;
-            }
-        }
-
-        decryptedMessage[i] = values[index];
+        decryptedMessage[i] = dict[decryptedMessage[i]];
     }
 
     // End of TODO
