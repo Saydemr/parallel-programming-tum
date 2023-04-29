@@ -98,11 +98,9 @@ const uint8_t dict[UNIQUE_CHARACTERS] = {13, 103, 113, 180, 116, 255, 106, 225, 
 
 
 inline void substitute_bytes() {
-    for (auto & row : message) {
-        for (auto & column : row) {
+    for (auto & row : message)
+        for (auto & column : row)
             column = dict[column];
-        }
-    }
 }
 
 
@@ -121,17 +119,16 @@ inline void shift_rows() {
     std::rotate(message[6],message[6] + 6, message[6] + BLOCK_SIZE);
 }
 
-inline uint8_t power(uint8_t x, uint8_t y)
+inline constexpr uint8_t power(uint8_t x, uint8_t y)
 {
-    int temp;
-    if(y == 0)
+    uint8_t temp = 0;
+    if(y < 1)
         return 1;
     temp = power(x, y/2);
-    if (y%2 == 0) {
-        return temp*temp;
-    }
-    else
+    if (y%2)
         return x*temp*temp;
+    else
+        return temp*temp;
 }
 
 /*
@@ -142,19 +139,15 @@ inline uint8_t power(uint8_t x, uint8_t y)
  * result row gets a different polynomial), and m is the current message value.
  *
  */
-inline void multiply_with_polynomial(int column) {
-    for (int row = 0; row < BLOCK_SIZE; ++row) {
-        auto result = 0;
-        for (int degree = 0; degree < BLOCK_SIZE; degree++) {
-            result += polynomialCoefficients[row][degree] * power(message[degree][column], degree + 1);
-        }
-        message[row][column] = result % 256;
-    }
-}
 
 inline void mix_columns() {
-    for (int column = 0; column < BLOCK_SIZE; ++column) {
-        multiply_with_polynomial(column);
+    for (uint8_t column = 0; column < BLOCK_SIZE; ++column) {
+        for (uint8_t row = 0; row < BLOCK_SIZE; ++row) {
+            uint8_t result = 0;
+            for (uint8_t degree = 0; degree < BLOCK_SIZE; ++degree)
+                result += polynomialCoefficients[row][degree] * power(message[degree][column], 1+degree);
+            message[row][column] = result % 256;
+        }
     }
 }
 
@@ -162,8 +155,8 @@ inline void mix_columns() {
  * Add the current key to the message using the XOR operation.
  */
 inline void add_key() {
-    for (auto row = 0; row < BLOCK_SIZE; ++row) {
-        for (auto column = 0; column < BLOCK_SIZE; ++column) {
+    for (uint8_t row = 0; row < BLOCK_SIZE; ++row) {
+        for (uint8_t column = 0; column < BLOCK_SIZE; ++column) {
             message[row][column] ^= key[row][column];
         }
     }
@@ -179,7 +172,7 @@ int main() {
     // For extra security (and because Vars wasn't able to find enough test messages to keep you occupied) each message
     // is put through VV-AES lots of times. If we can't stop the adverse Masters from decrypting our highly secure
     // encryption scheme, we can at least slow them down.
-    for (int i = 0; i < ITERATIONS; ++i) {
+    for (uint32_t i = 0; i < ITERATIONS; ++i) {
         // For each message, we use a predetermined key (e.g. the password). In our case, its just pseudo random.
         set_next_key();
 
@@ -187,7 +180,7 @@ int main() {
         add_key();
 
         // We do 9+1 rounds for 128 bit keys
-        for (int round = 0; round < ROUNDS; ++round) {
+        for (uint8_t round = 0; round < ROUNDS; ++round) {
             //In each round, we use a different key derived from the original (refer to the key schedule).
 
             set_next_key();
