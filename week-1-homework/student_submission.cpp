@@ -2,10 +2,10 @@
 #include <algorithm>
 #include <limits>
 
-#define BLOCK_SIZE 7
-#define UNIQUE_CHARACTERS 256
-#define ROUNDS 9
-#define ITERATIONS 400000
+constexpr int BLOCK_SIZE = 7;
+constexpr int UNIQUE_CHARACTERS = 256;
+constexpr int ROUNDS = 9;
+constexpr int ITERATIONS = 400000;
 
 /*
  * This is the message given to you to encrypt to verify the correctness and speed of your approach. Unfortunately,
@@ -139,14 +139,15 @@ inline constexpr uint8_t power(uint8_t x, uint8_t y)
  * result row gets a different polynomial), and m is the current message value.
  *
  */
+uint8_t powers[256][BLOCK_SIZE+1];
 
 inline void mix_columns() {
     for (uint8_t column = 0; column < BLOCK_SIZE; ++column) {
         for (uint8_t row = 0; row < BLOCK_SIZE; ++row) {
             uint8_t result = 0;
             for (uint8_t degree = 0; degree < BLOCK_SIZE; ++degree)
-                result += polynomialCoefficients[row][degree] * power(message[degree][column], 1+degree);
-            message[row][column] = result % 256;
+                result += polynomialCoefficients[row][degree] * powers[message[degree][column]][1+degree];
+            message[row][column] = result;
         }
     }
 }
@@ -168,6 +169,12 @@ inline void add_key() {
 int main() {
     // Receive the problem from the system.
     readInput();
+
+    for(uint16_t i = 0; i < 256; ++i) {
+        for (uint8_t j = 0; j < BLOCK_SIZE+1; ++j) {
+            powers[i][j] = power(i, j);
+        }
+    }
 
     // For extra security (and because Vars wasn't able to find enough test messages to keep you occupied) each message
     // is put through VV-AES lots of times. If we can't stop the adverse Masters from decrypting our highly secure
