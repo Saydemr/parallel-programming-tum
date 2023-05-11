@@ -21,11 +21,14 @@ uint8_t message[BLOCK_SIZE][BLOCK_SIZE] = {
         {' ', 'I', 'T', '.', '.', '.', ' '}
 };
 
+
 /*
  * The set of all keys generated at runtime and the index of the current key.
  */
 int currentKey = 0;
 uint8_t allKeys[ROUNDS][BLOCK_SIZE][BLOCK_SIZE];
+
+int powers[256][BLOCK_SIZE+1];
 
 /*
  * Use this like a 2D-Matrix key[BLOCK_SIZE][BLOCK_SIZE];
@@ -145,7 +148,7 @@ inline void mix_columns() {
         for (uint8_t row = 0; row < BLOCK_SIZE; ++row) {
             uint8_t result = 0;
             for (uint8_t degree = 0; degree < BLOCK_SIZE; ++degree)
-                result += polynomialCoefficients[row][degree] * power(message[degree][column], 1+degree);
+                result += polynomialCoefficients[row][degree] * powers[message[degree][column]][1+degree];
             message[row][column] = result % 256;
         }
     }
@@ -161,7 +164,6 @@ inline void add_key() {
         }
     }
 }
-
 /*
  * Your main encryption routine.
  */
@@ -169,6 +171,11 @@ int main() {
     // Receive the problem from the system.
     readInput();
 
+    for (int i = 0; i < 256 ; ++i) {
+        for (int j = 0; j < BLOCK_SIZE; ++j) {
+            powers[i][j] = power(i, j);
+        }
+    }
     // For extra security (and because Vars wasn't able to find enough test messages to keep you occupied) each message
     // is put through VV-AES lots of times. If we can't stop the adverse Masters from decrypting our highly secure
     // encryption scheme, we can at least slow them down.
