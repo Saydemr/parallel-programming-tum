@@ -1,14 +1,13 @@
 #include <string>
 #include <deque>
 #include <future>
-#include <functional>
 #include <iostream>
 #include <cstring>
 #include <openssl/sha.h>
 
 
 #define SHA1_BYTES 20
-#define NUM_THREADS 25
+#define NUM_THREADS 26
 
 struct Sha1Hash {
     unsigned char data[SHA1_BYTES];
@@ -57,22 +56,11 @@ inline uint8_t count_leading_zero_bits(Sha1Hash& hash){
     uint32_t bits;
 
     bits = hash.data[0] << 24 |
-           hash.data[1] << 16 |
-           hash.data[2] << 8 |
-           hash.data[3];
-    if(bits)
-        return __builtin_clz(bits);
-    else
-        return 16;
+           hash.data[1] << 16;
+
+    return __builtin_clz(bits);
 }
 
-inline unsigned int readInput() {
-    unsigned int seed = 0;
-    std::cout << "READY" << std::endl;
-    std::cin >> seed;
-
-    return seed;
-}
 
 inline void printHash(Sha1Hash& hash) {
 
@@ -122,9 +110,7 @@ ProblemQueue problemQueue;
 // generate numProblems sha1 hashes with leadingZerosProblem leading zero bits
 // This method is intentionally compute intense so you can already start working on solving
 // problems while more problems are generated
-inline void generateProblem(int seed){
-    srand(seed);
-
+inline void generateProblem(){
     for(int16_t i = 0; i < 10000; ++i){
         auto str = (std::to_string(rand()) + std::to_string(rand()));
         Sha1Hash hash = MyUtility::sha1(str);
@@ -147,16 +133,18 @@ inline Sha1Hash findSolutionHash(Sha1Hash hash){
 
     return hash;
 }
-
+unsigned int seed = 0;
 int main() {
 
     Sha1Hash solution;
     Sha1Hash solutionHashes[10000];
     std::thread threads[NUM_THREADS];
+    std::cout << "READY" << std::endl;
+    std::cin >> seed;
+    srand(seed);
 
 
-    unsigned int seed = readInput();
-    std::thread generateProblems = std::thread(generateProblem, seed);
+    std::thread generateProblems = std::thread(generateProblem);
 
 
     // create threads to solve problems
