@@ -8,7 +8,7 @@ using namespace std::complex_literals;
 #define VIEW_Y0 -2.0
 #define VIEW_Y1 2.0
 #define x_resolution 1258
-#define y_resolution 1300
+#define y_resolution 726
 #define x_stepsize 0.0025268477574226151
 #define y_stepsize 0.0027567195037904892
 #define max_iter 223
@@ -53,5 +53,5 @@ int main()
 
         }
     }
-    printf("%i\nDONE\n", pointsInSetCount);
+    printf("%i\nDONE\n", pointsInSetCount*2);
 }
