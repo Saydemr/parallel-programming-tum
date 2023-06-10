@@ -8,6 +8,7 @@
 
 
 #define SHA1_BYTES 20
+#define NUM_THREADS 25
 
 struct Sha1Hash {
     unsigned char data[SHA1_BYTES];
@@ -33,8 +34,7 @@ inline Sha1Hash MyUtility::sha1(Sha1Hash& input){
 
 // generate a new Sha1 hash by concatenating 2 hashes
 inline Sha1Hash MyUtility::sha1(Sha1Hash& hash1, Sha1Hash& hash2){
-
-    unsigned char* combinedInput = static_cast<unsigned char*>(malloc(SHA1_BYTES * 2));
+    unsigned char combinedInput[SHA1_BYTES * 2];
     memcpy(combinedInput, hash1.data, SHA1_BYTES);
     memcpy(&combinedInput[20], hash2.data, SHA1_BYTES);
     Sha1Hash result = sha1(combinedInput, SHA1_BYTES*2);
@@ -45,39 +45,13 @@ inline Sha1Hash MyUtility::sha1(Sha1Hash& hash1, Sha1Hash& hash2){
 inline Sha1Hash MyUtility::sha1(const unsigned char* input, size_t input_length){
     Sha1Hash output;
 
-    // call openssl sha1 method. this requires compilation with -lcrypto
     SHA1(input, input_length, output.data);
 
     return output;
 }
 
 inline uint8_t count_leading_zero_bits(Sha1Hash& hash){
-
-    unsigned int bits;
-    uint8_t total_leading_zero_bits = 0;
-
-#pragma GCC unroll 4
-    for(uint8_t i = 0; i < SHA1_BYTES; i+=4){
-        // adjust bit order due to little endianness
-        bits = (static_cast<unsigned int>(hash.data[i]) << 24) |
-               (static_cast<unsigned int>(hash.data[i+1]) << 16);
-        if(bits == 0){
-            total_leading_zero_bits += 32;
-        }else{
-            // __builtin_clz is undefined for 0
-            return total_leading_zero_bits + __builtin_clz(bits);
-        }
-    }
-
-    return total_leading_zero_bits;
-}
-
-inline unsigned int readInput() {
-    unsigned int seed = 0;
-    std::cout << "READY" << std::endl;
-    std::cin >> seed;
-
-    return seed;
+    return __builtin_clz(static_cast<unsigned int>(hash.data[0]) << 24) | (static_cast<unsigned int>(hash.data[1]) << 16);
 }
 
 inline void printHash(Sha1Hash& hash) {
@@ -116,11 +90,6 @@ public:
         return p;
     }
 
-    bool empty(){
-        return problemQueue.empty();
-    }
-    bool stop = false;
-
 private:
     std::deque<Problem> problemQueue;
     std::condition_variable cv;
@@ -134,8 +103,7 @@ ProblemQueue problemQueue;
 // generate numProblems sha1 hashes with leadingZerosProblem leading zero bits
 // This method is intentionally compute intense so you can already start working on solving
 // problems while more problems are generated
-inline void generateProblem(int seed){
-    srand(seed);
+inline void generateProblem(){
 
     for(int16_t i = 0; i < 10000; ++i){
         std::string base = std::to_string(rand()) + std::to_string(rand());
@@ -147,8 +115,8 @@ inline void generateProblem(int seed){
     }
 
 
-    for (uint8_t i = 0; i < 25; ++i) {
-        problemQueue.push(Problem{Sha1Hash(), -1});
+    for (uint8_t i = 0; i < NUM_THREADS; ++i) {
+        problemQueue.push(Problem{.problemNum=-1});
     }
 }
 
@@ -163,16 +131,17 @@ inline Sha1Hash findSolutionHash(Sha1Hash hash){
 
 int main() {
     Sha1Hash solutionHashes[10000];
-    uint8_t num_threads = 25;
-    std::thread threads[num_threads];
+    std::thread threads[NUM_THREADS];
 
-
-    unsigned int seed = readInput();
-    std::thread generateProblems = std::thread(generateProblem, seed);
+    unsigned int seed = 0;
+    std::cout << "READY" << std::endl;
+    std::cin >> seed;
+    srand(seed);
+    std::thread generateProblems = std::thread(generateProblem);
 
 
     // create threads to solve problems
-    for (uint8_t i = 0; i < num_threads; ++i) {
+    for (uint8_t i = 0; i < NUM_THREADS; ++i) {
         threads[i] = std::thread([&]() {
             while(true) {
                 Problem p = problemQueue.pop();
@@ -186,7 +155,7 @@ int main() {
 
 
     // join threads
-    for (uint8_t i = 0; i < num_threads; i++) {
+    for (uint8_t i = 0; i < NUM_THREADS; i++) {
         threads[i].join();
     }
 
